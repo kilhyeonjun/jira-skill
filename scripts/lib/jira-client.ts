@@ -1,9 +1,8 @@
 import { config } from 'dotenv';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { homedir } from 'os';
+import { join } from 'path';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-config({ path: resolve(__dirname, '../../.env') });
+config({ path: join(homedir(), '.env') });
 
 export interface JiraConfig {
   baseUrl: string;
