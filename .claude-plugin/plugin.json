@@ -1,0 +1,13 @@
+{
+  "name": "jira-skill",
+  "version": "1.0.0",
+  "description": "Jira Cloud API integration for worklog management, issue operations, and description updates with ADF support.",
+  "author": {
+    "name": "kilhyeonjun",
+    "email": "hyeonjun@gameduo.net"
+  },
+  "homepage": "https://github.com/kilhyeonjun/jira-skill",
+  "repository": "https://github.com/kilhyeonjun/jira-skill",
+  "license": "MIT",
+  "keywords": ["jira", "worklog", "atlassian", "adf", "issue-tracking"]
+}
