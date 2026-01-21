@@ -1,11 +1,9 @@
-/**
- * Jira REST API Client
- * 
- * Required environment variables:
- * - JIRA_BASE_URL: e.g., https://your-domain.atlassian.net
- * - JIRA_USERNAME: e.g., user@example.com
- * - JIRA_API_TOKEN: API token from Atlassian account
- */
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
+config({ path: resolve(__dirname, '../../.env') });
 
 export interface JiraConfig {
   baseUrl: string;
