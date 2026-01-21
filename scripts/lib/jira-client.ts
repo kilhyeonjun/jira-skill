@@ -1,8 +1,4 @@
-import { config } from 'dotenv';
-import { homedir } from 'os';
-import { join } from 'path';
 
-config({ path: join(homedir(), '.env') });
 
 export interface JiraConfig {
   baseUrl: string;

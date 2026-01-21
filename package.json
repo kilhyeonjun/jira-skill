@@ -8,7 +8,6 @@
     "issue": "npx tsx scripts/issue.ts"
   },
   "dependencies": {
-    "dotenv": "^17.2.3",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
