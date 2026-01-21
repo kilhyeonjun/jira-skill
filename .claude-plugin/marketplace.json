@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "kilhyeonjun-skills",
+  "version": "1.0.0",
+  "description": "Personal Claude Skills marketplace by kilhyeonjun",
+  "owner": {
+    "name": "kilhyeonjun",
+    "email": "hyeonjun@gameduo.net"
+  },
+  "plugins": [
+    {
+      "name": "jira-skill",
+      "description": "Jira Cloud API integration for worklog management, issue operations, and description updates with ADF support.",
+      "source": ".",
+      "category": "development"
+    }
+  ]
+}
