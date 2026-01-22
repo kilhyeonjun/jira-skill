@@ -1,5 +1,5 @@
 ---
-name: jira-skill
+name: jira
 description: Jira Cloud API integration for worklog management, issue operations, and description updates with ADF (Atlassian Document Format) support. Use this skill when users need to interact with Jira - adding worklogs, searching issues, updating descriptions, or adding comments.
 ---
 
