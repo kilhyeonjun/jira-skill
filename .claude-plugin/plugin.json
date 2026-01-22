@@ -1,6 +1,6 @@
 {
   "name": "jira-skill",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Jira Cloud API integration for worklog management, issue operations, and description updates with ADF support.",
   "author": {
     "name": "kilhyeonjun",
