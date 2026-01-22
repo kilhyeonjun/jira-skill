@@ -267,10 +267,10 @@ export function formatSecondsToTime(seconds: number): string {
 /**
  * Parse date string to ISO 8601 format for Jira API
  * @param dateStr - Accepts: "1/21", "01/21", "2026-01-21", "2026/01/21"
- * @param defaultYear - Year to use when not specified (default: 2026)
+ * @param defaultYear - Year to use when not specified (default: current year)
  * @returns ISO 8601 string: "2026-01-21T09:00:00.000+0900"
  */
-export function parseDateToISO(dateStr: string, defaultYear = 2026): string {
+export function parseDateToISO(dateStr: string, defaultYear = new Date().getFullYear()): string {
   let year: number;
   let month: number;
   let day: number;

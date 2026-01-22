@@ -4,8 +4,6 @@ import { getJiraClient } from './lib/jira-client.js';
 import { markdownToAdf, adfToPlainText } from './lib/adf.js';
 import * as fs from 'fs';
 
-const MISC_TICKET_KEY = 'DEV-3422';
-
 function printUsage(): void {
   console.log(`
 Usage: npx tsx issue.ts <command> [options]
@@ -17,7 +15,7 @@ Commands:
 
   search <jql>
     Search issues using JQL
-    Example: npx tsx issue.ts search "project = DEV AND assignee = currentUser()"
+    Example: npx tsx issue.ts search "assignee = currentUser() AND summary ~ '기타작업'"
     Example: npx tsx issue.ts search "project = DEV AND status = 'In Progress'"
 
   update-description <issueKey> <markdown>
@@ -35,10 +33,6 @@ Commands:
   comment <issueKey> <markdown>
     Add comment to issue in markdown format
     Example: npx tsx issue.ts comment DEV-1234 "Fixed the bug. See [PR](https://github.com/...)"
-
-  misc-append <markdown>
-    Append to misc ticket (${MISC_TICKET_KEY}) description
-    Example: npx tsx issue.ts misc-append "## 1/22\\n- Code review [1h]"
 `);
 }
 
@@ -178,16 +172,6 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         await addComment(issueKey, markdownParts.join(' '));
-        break;
-      }
-
-      case 'misc-append': {
-        const [, ...markdownParts] = args;
-        if (markdownParts.length === 0) {
-          console.error('Error: misc-append requires markdown');
-          process.exit(1);
-        }
-        await appendDescription(MISC_TICKET_KEY, markdownParts.join(' '));
         break;
       }
 

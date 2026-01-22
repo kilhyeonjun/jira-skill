@@ -17,12 +17,6 @@ export JIRA_USERNAME="user@example.com"
 export JIRA_API_TOKEN="your-api-token"
 ```
 
-Install dependencies once:
-
-```bash
-cd /path/to/jira-skill && npm install
-```
-
 ## Worklog Operations
 
 Script: `scripts/worklog.ts`
@@ -37,17 +31,6 @@ Examples:
 ```bash
 npx tsx scripts/worklog.ts add DEV-1234 "2h 30m" "1/21" "Fixed authentication bug"
 npx tsx scripts/worklog.ts add DEV-1234 "4h" "2026-01-22"
-```
-
-### Add to Misc Ticket (DEV-3422)
-
-```bash
-npx tsx scripts/worklog.ts add-misc <time> <date> [comment]
-```
-
-Example:
-```bash
-npx tsx scripts/worklog.ts add-misc "1h" "1/21" "Code review"
 ```
 
 ### List Worklogs
@@ -91,8 +74,8 @@ npx tsx scripts/issue.ts search "<jql>"
 
 Examples:
 ```bash
-npx tsx scripts/issue.ts search "project = DEV AND assignee = currentUser()"
-npx tsx scripts/issue.ts search "project = DEV AND status = 'In Progress'"
+npx tsx scripts/issue.ts search "assignee = currentUser()"
+npx tsx scripts/issue.ts search "assignee = currentUser() AND summary ~ '기타작업'"
 npx tsx scripts/issue.ts search "worklogAuthor = currentUser() AND worklogDate >= startOfMonth()"
 ```
 
@@ -103,11 +86,6 @@ npx tsx scripts/issue.ts update-description <issueKey> "<markdown>"
 npx tsx scripts/issue.ts update-description-file <issueKey> <filepath>
 ```
 
-Example:
-```bash
-npx tsx scripts/issue.ts update-description DEV-1234 "# Overview\n- Task 1\n- Task 2"
-```
-
 ### Append to Description
 
 ```bash
@@ -116,7 +94,7 @@ npx tsx scripts/issue.ts append-description <issueKey> "<markdown>"
 
 Example:
 ```bash
-npx tsx scripts/issue.ts append-description DEV-3422 "## 1/22 [2h]\n- Code review\n- Bug fix"
+npx tsx scripts/issue.ts append-description DEV-1234 "## 1/22 [2h]\n- Code review\n- Bug fix"
 ```
 
 ### Add Comment
@@ -125,27 +103,35 @@ npx tsx scripts/issue.ts append-description DEV-3422 "## 1/22 [2h]\n- Code revie
 npx tsx scripts/issue.ts comment <issueKey> "<markdown>"
 ```
 
-### Append to Misc Ticket Description
-
-```bash
-npx tsx scripts/issue.ts misc-append "<markdown>"
-```
-
-Example:
-```bash
-npx tsx scripts/issue.ts misc-append "## 1/22 [1h 30m]\n- [PR Review](https://github.com/org/repo/pull/123)\n- Team meeting"
-```
-
 ## Date and Time Formats
 
 ### Date Formats
-- Short: `1/21`, `01/21` (defaults to year 2026)
+- Short: `1/21`, `01/21` (defaults to current year)
 - Full: `2026-01-21`, `2026/01/21`
 
 ### Time Formats
 - Hours only: `1h`, `2h`
 - Minutes only: `30m`, `45m`
 - Combined: `1h 30m`, `2h 15m`
+
+## 기타 티켓 (Misc Ticket) 작업
+
+기타 티켓은 하드코딩된 티켓 번호가 아닌, 동적으로 검색하여 찾습니다:
+
+### Step 1: 기타 티켓 찾기
+```bash
+npx tsx scripts/issue.ts search "assignee = currentUser() AND summary ~ '기타작업'"
+```
+
+### Step 2: 찾은 티켓에 Worklog 추가
+```bash
+npx tsx scripts/worklog.ts add <찾은티켓번호> "2h" "1/22" "작업 내용"
+```
+
+### Step 3: Description 추가 (필요시)
+```bash
+npx tsx scripts/issue.ts append-description <찾은티켓번호> "## 1/22 [2h]\n- 작업 내용"
+```
 
 ## ADF (Atlassian Document Format)
 
@@ -165,11 +151,14 @@ For complex ADF needs, refer to `references/adf-format.md`.
 ### Record Daily Work
 
 ```bash
-# Add worklog with comment
-npx tsx scripts/worklog.ts add DEV-1234 "4h" "1/22" "Implemented user authentication"
+# 1. Find misc ticket
+npx tsx scripts/issue.ts search "assignee = currentUser() AND summary ~ '기타작업'"
 
-# Update misc ticket description
-npx tsx scripts/issue.ts misc-append "## 1/22 [4h]\n- DEV-1234: User authentication\n- Code review"
+# 2. Add worklog to found ticket
+npx tsx scripts/worklog.ts add DEV-XXXX "4h" "1/22" "Implemented user authentication"
+
+# 3. Update description
+npx tsx scripts/issue.ts append-description DEV-XXXX "## 1/22 [4h]\n- User authentication\n- Code review"
 ```
 
 ### Find My Recent Work

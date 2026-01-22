@@ -7,8 +7,6 @@ import {
   parseDateToISO,
 } from './lib/jira-client.js';
 
-const MISC_TICKET_KEY = 'DEV-3422';
-
 function printUsage(): void {
   console.log(`
 Usage: npx tsx worklog.ts <command> [options]
@@ -17,10 +15,6 @@ Commands:
   add <issueKey> <time> <date> [comment]
     Add worklog to an issue
     Example: npx tsx worklog.ts add DEV-1234 "2h 30m" "1/21" "Fixed bug"
-    
-  add-misc <time> <date> [comment]
-    Add worklog to misc ticket (${MISC_TICKET_KEY})
-    Example: npx tsx worklog.ts add-misc "1h" "1/21" "Code review"
 
   list <issueKey>
     List all worklogs for an issue
@@ -34,7 +28,7 @@ Commands:
     Delete a worklog
     Example: npx tsx worklog.ts delete DEV-1234 12345
 
-Date formats: "1/21", "01/21", "2026-01-21" (defaults to 2026 if year not specified)
+Date formats: "1/21", "01/21" (defaults to current year if not specified)
 Time formats: "1h", "30m", "1h 30m", "2h 15m"
 `);
 }
@@ -150,17 +144,6 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         await addWorklog(issueKey, time, date, commentParts.join(' ') || undefined);
-        break;
-      }
-
-      case 'add-misc': {
-        const [, time, date, ...commentParts] = args;
-        if (!time || !date) {
-          console.error('Error: add-misc requires time and date');
-          printUsage();
-          process.exit(1);
-        }
-        await addWorklog(MISC_TICKET_KEY, time, date, commentParts.join(' ') || undefined);
         break;
       }
 
