@@ -197,14 +197,11 @@ export class JiraClient {
   }
 
   async searchIssues(jql: string, maxResults = 50): Promise<SearchResponse> {
+    const fields = 'summary,status,assignee,created,updated';
+    const encodedJql = encodeURIComponent(jql);
     return this.request<SearchResponse>(
-      'POST',
-      '/rest/api/3/search',
-      {
-        jql,
-        maxResults,
-        fields: ['summary', 'status', 'assignee', 'created', 'updated'],
-      }
+      'GET',
+      `/rest/api/3/search/jql?jql=${encodedJql}&maxResults=${maxResults}&fields=${fields}`
     );
   }
 
