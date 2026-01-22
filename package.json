@@ -1,6 +1,6 @@
 {
   "name": "jira-skill",
-  "version": "1.0.0",
+  "version": "1.3.0",
   "description": "Jira API skill for Claude Code - worklog, issue management with ADF support",
   "type": "module",
   "scripts": {

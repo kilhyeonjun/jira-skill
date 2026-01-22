@@ -1,15 +1,24 @@
 ---
 name: jira
-description: Jira Cloud API integration for worklog management, issue operations, and description updates with ADF (Atlassian Document Format) support. Use this skill when users need to interact with Jira - adding worklogs, searching issues, updating descriptions, or adding comments.
+description: Jira Cloud API integration for worklog management, issue operations, and description updates with ADF (Atlassian Document Format) support. This skill should be used when interacting with Jira - adding worklogs, searching issues, updating descriptions, or adding comments.
 ---
 
 # Jira Skill
 
-Provides Jira Cloud REST API integration with TypeScript CLI scripts. Handles worklog CRUD, issue search/update, and automatic markdown-to-ADF conversion.
+## Overview
+
+This skill provides Jira Cloud REST API integration through TypeScript CLI scripts. It handles:
+
+- **Worklog operations**: Add, list, update, delete time tracking entries
+- **Issue operations**: Search via JQL, get details, update descriptions
+- **ADF conversion**: Automatic Markdown-to-ADF conversion for descriptions and comments
+
+For API reference, see `references/api_reference.md`.
+For ADF format details, see `references/adf-format.md`.
 
 ## Prerequisites
 
-Set environment variables before using any scripts:
+To use this skill, configure the following environment variables:
 
 ```bash
 export JIRA_BASE_URL="https://your-domain.atlassian.net"
@@ -114,23 +123,23 @@ npx tsx scripts/issue.ts comment <issueKey> "<markdown>"
 - Minutes only: `30m`, `45m`
 - Combined: `1h 30m`, `2h 15m`
 
-## 기타 티켓 (Misc Ticket) 작업
+## Misc Ticket Workflow
 
-기타 티켓은 하드코딩된 티켓 번호가 아닌, 동적으로 검색하여 찾습니다:
+Misc tickets are found dynamically via JQL search, not hardcoded ticket keys:
 
-### Step 1: 기타 티켓 찾기
+### Step 1: Find Misc Ticket
 ```bash
 npx tsx scripts/issue.ts search "assignee = currentUser() AND summary ~ '기타작업'"
 ```
 
-### Step 2: 찾은 티켓에 Worklog 추가
+### Step 2: Add Worklog to Found Ticket
 ```bash
-npx tsx scripts/worklog.ts add <찾은티켓번호> "2h" "1/22" "작업 내용"
+npx tsx scripts/worklog.ts add <TICKET_KEY> "2h" "1/22" "Work description"
 ```
 
-### Step 3: Description 추가 (필요시)
+### Step 3: Append Description (Optional)
 ```bash
-npx tsx scripts/issue.ts append-description <찾은티켓번호> "## 1/22 [2h]\n- 작업 내용"
+npx tsx scripts/issue.ts append-description <TICKET_KEY> "## 1/22 [2h]\n- Work description"
 ```
 
 ## ADF (Atlassian Document Format)
@@ -172,3 +181,17 @@ npx tsx scripts/issue.ts search "worklogAuthor = currentUser() AND worklogDate >
 ```bash
 npx tsx scripts/issue.ts append-description DEV-1234 "## References\n- [Design Doc](https://...)\n- [PR](https://github.com/...)"
 ```
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Add worklog | `npx tsx scripts/worklog.ts add <key> <time> <date> [comment]` |
+| List worklogs | `npx tsx scripts/worklog.ts list <key>` |
+| Update worklog | `npx tsx scripts/worklog.ts update <key> <id> --time <t> --date <d>` |
+| Delete worklog | `npx tsx scripts/worklog.ts delete <key> <id>` |
+| Get issue | `npx tsx scripts/issue.ts get <key>` |
+| Search issues | `npx tsx scripts/issue.ts search "<jql>"` |
+| Update description | `npx tsx scripts/issue.ts update-description <key> "<md>"` |
+| Append description | `npx tsx scripts/issue.ts append-description <key> "<md>"` |
+| Add comment | `npx tsx scripts/issue.ts comment <key> "<md>"` |
