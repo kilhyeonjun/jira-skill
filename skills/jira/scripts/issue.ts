@@ -9,6 +9,12 @@ function printUsage(): void {
 Usage: npx tsx issue.ts <command> [options]
 
 Commands:
+  create <projectKey> <issueType> <summary> [--description <md>] [--labels <l1,l2>] [--assignee me]
+    Create a new issue
+    Example: npx tsx issue.ts create DEV Task "Implement feature X"
+    Example: npx tsx issue.ts create DEV Bug "Fix login error" --description "Steps to reproduce..."
+    Example: npx tsx issue.ts create DEV Task "My task" --assignee me --labels "backend,urgent"
+
   get <issueKey>
     Get issue details
     Example: npx tsx issue.ts get DEV-1234
@@ -55,6 +61,39 @@ Commands:
     Replace all labels on an issue
     Example: npx tsx issue.ts set-labels DEV-1234 bugfix frontend
 `);
+}
+
+interface CreateOptions {
+  description?: string;
+  labels?: string[];
+  assignee?: string;
+}
+
+async function createIssue(
+  projectKey: string,
+  issueType: string,
+  summary: string,
+  options: CreateOptions
+): Promise<void> {
+  const client = getJiraClient();
+  
+  let assigneeAccountId: string | undefined;
+  if (options.assignee === 'me') {
+    const currentUser = await client.getCurrentUser();
+    assigneeAccountId = currentUser.accountId;
+  }
+
+  const result = await client.createIssue({
+    projectKey,
+    issueType,
+    summary,
+    description: options.description ? markdownToAdf(options.description) : undefined,
+    labels: options.labels,
+    assigneeAccountId,
+  });
+
+  console.log(`Created issue: ${result.key}`);
+  console.log(`URL: ${process.env.JIRA_BASE_URL}/browse/${result.key}`);
 }
 
 async function getIssue(issueKey: string): Promise<void> {
@@ -201,6 +240,28 @@ async function main(): Promise<void> {
 
   try {
     switch (command) {
+      case 'create': {
+        const [, projectKey, issueType, summary, ...rest] = args;
+        if (!projectKey || !issueType || !summary) {
+          console.error('Error: create requires projectKey, issueType, and summary');
+          process.exit(1);
+        }
+        
+        const options: CreateOptions = {};
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--description' && rest[i + 1]) {
+            options.description = rest[++i];
+          } else if (rest[i] === '--labels' && rest[i + 1]) {
+            options.labels = rest[++i].split(',').map(l => l.trim());
+          } else if (rest[i] === '--assignee' && rest[i + 1]) {
+            options.assignee = rest[++i];
+          }
+        }
+        
+        await createIssue(projectKey, issueType, summary, options);
+        break;
+      }
+
       case 'get': {
         const issueKey = args[1];
         if (!issueKey) {

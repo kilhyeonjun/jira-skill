@@ -71,6 +71,24 @@ npx tsx scripts/worklog.ts delete <issueKey> <worklogId>
 
 Script: `scripts/issue.ts`
 
+### Create Issue
+
+```bash
+npx tsx scripts/issue.ts create <projectKey> <issueType> <summary> [options]
+```
+
+Options:
+- `--description <markdown>` - Issue description in markdown
+- `--labels <label1,label2>` - Comma-separated labels
+- `--assignee me` - Assign to current user
+
+Examples:
+```bash
+npx tsx scripts/issue.ts create DEV Task "Implement user authentication"
+npx tsx scripts/issue.ts create DEV Bug "Fix login error" --description "## Steps\n1. Click login\n2. Error appears"
+npx tsx scripts/issue.ts create DEV Task "Backend refactoring" --assignee me --labels "backend,tech-debt"
+```
+
 ### Get Issue Details
 
 ```bash
@@ -254,6 +272,7 @@ npx tsx scripts/issue.ts append-description DEV-1234 "## References\n- [Design D
 
 | Task | Command |
 |------|---------|
+| Create issue | `npx tsx scripts/issue.ts create <project> <type> <summary> [--description <md>] [--labels <l1,l2>] [--assignee me]` |
 | Add worklog | `npx tsx scripts/worklog.ts add <key> <time> <date> [comment]` |
 | List worklogs | `npx tsx scripts/worklog.ts list <key>` |
 | Update worklog | `npx tsx scripts/worklog.ts update <key> <id> --time <t> --date <d>` |

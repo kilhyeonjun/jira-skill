@@ -85,6 +85,22 @@ export interface LabelOperation {
   remove?: string;
 }
 
+export interface CreateIssueInput {
+  projectKey: string;
+  summary: string;
+  issueType: string;
+  description?: unknown;
+  assigneeAccountId?: string;
+  labels?: string[];
+  parentKey?: string;
+}
+
+export interface CreateIssueResponse {
+  id: string;
+  key: string;
+  self: string;
+}
+
 export class JiraClient {
   private config: JiraConfig;
   private headers: HeadersInit;
@@ -292,6 +308,40 @@ export class JiraClient {
           labels,
         },
       }
+    );
+  }
+
+  async createIssue(input: CreateIssueInput): Promise<CreateIssueResponse> {
+    const fields: Record<string, unknown> = {
+      project: { key: input.projectKey },
+      summary: input.summary,
+      issuetype: { name: input.issueType },
+    };
+
+    if (input.description) {
+      fields.description = input.description;
+    }
+    if (input.assigneeAccountId) {
+      fields.assignee = { accountId: input.assigneeAccountId };
+    }
+    if (input.labels && input.labels.length > 0) {
+      fields.labels = input.labels;
+    }
+    if (input.parentKey) {
+      fields.parent = { key: input.parentKey };
+    }
+
+    return this.request<CreateIssueResponse>(
+      'POST',
+      '/rest/api/3/issue',
+      { fields }
+    );
+  }
+
+  async getCurrentUser(): Promise<{ accountId: string; displayName: string; emailAddress: string }> {
+    return this.request<{ accountId: string; displayName: string; emailAddress: string }>(
+      'GET',
+      '/rest/api/3/myself'
     );
   }
 }
