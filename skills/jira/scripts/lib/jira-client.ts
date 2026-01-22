@@ -60,6 +60,31 @@ export interface SearchResponse {
   issues: IssueResponse[];
 }
 
+export interface TransitionInfo {
+  id: string;
+  name: string;
+  to: {
+    id: string;
+    name: string;
+    description?: string;
+    statusCategory?: {
+      id: number;
+      key: string;
+      name: string;
+      colorName: string;
+    };
+  };
+}
+
+export interface TransitionsResponse {
+  transitions: TransitionInfo[];
+}
+
+export interface LabelOperation {
+  add?: string;
+  remove?: string;
+}
+
 export class JiraClient {
   private config: JiraConfig;
   private headers: HeadersInit;
@@ -223,6 +248,49 @@ export class JiraClient {
       `/rest/api/3/issue/${issueKey}/comment`,
       {
         body: adfContent,
+      }
+    );
+  }
+
+  async getTransitions(issueKey: string): Promise<TransitionsResponse> {
+    return this.request<TransitionsResponse>(
+      'GET',
+      `/rest/api/3/issue/${issueKey}/transitions`
+    );
+  }
+
+  async transitionIssue(issueKey: string, transitionId: string): Promise<void> {
+    await this.request<void>(
+      'POST',
+      `/rest/api/3/issue/${issueKey}/transitions`,
+      {
+        transition: {
+          id: transitionId,
+        },
+      }
+    );
+  }
+
+  async updateLabels(issueKey: string, operations: LabelOperation[]): Promise<void> {
+    await this.request<void>(
+      'PUT',
+      `/rest/api/3/issue/${issueKey}`,
+      {
+        update: {
+          labels: operations,
+        },
+      }
+    );
+  }
+
+  async setLabels(issueKey: string, labels: string[]): Promise<void> {
+    await this.request<void>(
+      'PUT',
+      `/rest/api/3/issue/${issueKey}`,
+      {
+        fields: {
+          labels,
+        },
       }
     );
   }

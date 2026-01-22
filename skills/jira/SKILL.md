@@ -11,6 +11,8 @@ This skill provides Jira Cloud REST API integration through TypeScript CLI scrip
 
 - **Worklog operations**: Add, list, update, delete time tracking entries
 - **Issue operations**: Search via JQL, get details, update descriptions
+- **Status transitions**: List available transitions, change issue status
+- **Label operations**: Add, remove, or replace labels on issues
 - **ADF conversion**: Automatic Markdown-to-ADF conversion for descriptions and comments
 
 For API reference, see `references/api_reference.md`.
@@ -112,6 +114,72 @@ npx tsx scripts/issue.ts append-description DEV-1234 "## 1/22 [2h]\n- Code revie
 npx tsx scripts/issue.ts comment <issueKey> "<markdown>"
 ```
 
+## Status Transitions
+
+Script: `scripts/issue.ts`
+
+### List Available Transitions
+
+```bash
+npx tsx scripts/issue.ts transitions <issueKey>
+```
+
+Shows all available status transitions for an issue with IDs, names, and target statuses.
+
+### Transition Issue (Change Status)
+
+```bash
+npx tsx scripts/issue.ts transition <issueKey> <transitionId|statusName>
+```
+
+Examples:
+```bash
+npx tsx scripts/issue.ts transition DEV-1234 21
+npx tsx scripts/issue.ts transition DEV-1234 "In Progress"
+npx tsx scripts/issue.ts transition DEV-1234 "Done"
+```
+
+Note: You can use either the transition ID (from `transitions` command) or the status name.
+
+## Label Operations
+
+Script: `scripts/issue.ts`
+
+### Add Labels
+
+```bash
+npx tsx scripts/issue.ts add-labels <issueKey> <label1> [label2] ...
+```
+
+Example:
+```bash
+npx tsx scripts/issue.ts add-labels DEV-1234 bugfix urgent frontend
+```
+
+### Remove Labels
+
+```bash
+npx tsx scripts/issue.ts remove-labels <issueKey> <label1> [label2] ...
+```
+
+Example:
+```bash
+npx tsx scripts/issue.ts remove-labels DEV-1234 low-priority
+```
+
+### Set Labels (Replace All)
+
+```bash
+npx tsx scripts/issue.ts set-labels <issueKey> <label1> [label2] ...
+```
+
+Example:
+```bash
+npx tsx scripts/issue.ts set-labels DEV-1234 bugfix frontend
+```
+
+Note: This replaces all existing labels. Use an empty label list to clear all labels.
+
 ## Date and Time Formats
 
 ### Date Formats
@@ -195,3 +263,8 @@ npx tsx scripts/issue.ts append-description DEV-1234 "## References\n- [Design D
 | Update description | `npx tsx scripts/issue.ts update-description <key> "<md>"` |
 | Append description | `npx tsx scripts/issue.ts append-description <key> "<md>"` |
 | Add comment | `npx tsx scripts/issue.ts comment <key> "<md>"` |
+| List transitions | `npx tsx scripts/issue.ts transitions <key>` |
+| Change status | `npx tsx scripts/issue.ts transition <key> <id\|name>` |
+| Add labels | `npx tsx scripts/issue.ts add-labels <key> <labels...>` |
+| Remove labels | `npx tsx scripts/issue.ts remove-labels <key> <labels...>` |
+| Set labels | `npx tsx scripts/issue.ts set-labels <key> <labels...>` |

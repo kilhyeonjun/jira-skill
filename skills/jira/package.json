@@ -1,0 +1,17 @@
+{
+  "name": "jira-skill",
+  "version": "1.4.0",
+  "description": "Jira API skill for Claude Code - worklog, issue, transition, label management with ADF support",
+  "type": "module",
+  "scripts": {
+    "worklog": "npx tsx scripts/worklog.ts",
+    "issue": "npx tsx scripts/issue.ts"
+  },
+  "dependencies": {
+    "tsx": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.3.3"
+  }
+}

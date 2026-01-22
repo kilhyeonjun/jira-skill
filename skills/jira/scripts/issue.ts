@@ -33,6 +33,27 @@ Commands:
   comment <issueKey> <markdown>
     Add comment to issue in markdown format
     Example: npx tsx issue.ts comment DEV-1234 "Fixed the bug. See [PR](https://github.com/...)"
+
+  transitions <issueKey>
+    List available status transitions for an issue
+    Example: npx tsx issue.ts transitions DEV-1234
+
+  transition <issueKey> <transitionId|statusName>
+    Transition issue to a new status
+    Example: npx tsx issue.ts transition DEV-1234 21
+    Example: npx tsx issue.ts transition DEV-1234 "In Progress"
+
+  add-labels <issueKey> <label1> [label2] ...
+    Add labels to an issue (keeps existing labels)
+    Example: npx tsx issue.ts add-labels DEV-1234 bugfix urgent
+
+  remove-labels <issueKey> <label1> [label2] ...
+    Remove labels from an issue
+    Example: npx tsx issue.ts remove-labels DEV-1234 low-priority
+
+  set-labels <issueKey> <label1> [label2] ...
+    Replace all labels on an issue
+    Example: npx tsx issue.ts set-labels DEV-1234 bugfix frontend
 `);
 }
 
@@ -104,6 +125,71 @@ async function addComment(issueKey: string, markdown: string): Promise<void> {
   console.log(`Comment added to ${issueKey}`);
 }
 
+async function listTransitions(issueKey: string): Promise<void> {
+  const client = getJiraClient();
+  const result = await client.getTransitions(issueKey);
+
+  console.log(`Available transitions for ${issueKey}:\n`);
+  
+  for (const transition of result.transitions) {
+    console.log(`  ID: ${transition.id}`);
+    console.log(`  Name: ${transition.name}`);
+    console.log(`  To Status: ${transition.to.name}`);
+    if (transition.to.statusCategory) {
+      console.log(`  Category: ${transition.to.statusCategory.name} (${transition.to.statusCategory.colorName})`);
+    }
+    console.log('');
+  }
+}
+
+async function transitionIssue(issueKey: string, transitionIdOrName: string): Promise<void> {
+  const client = getJiraClient();
+  const transitions = await client.getTransitions(issueKey);
+  
+  let transitionId = transitionIdOrName;
+  
+  if (!/^\d+$/.test(transitionIdOrName)) {
+    const found = transitions.transitions.find(
+      t => t.name.toLowerCase() === transitionIdOrName.toLowerCase() ||
+           t.to.name.toLowerCase() === transitionIdOrName.toLowerCase()
+    );
+    if (!found) {
+      console.error(`Transition "${transitionIdOrName}" not found. Available transitions:`);
+      for (const t of transitions.transitions) {
+        console.error(`  - ${t.name} (ID: ${t.id}) -> ${t.to.name}`);
+      }
+      process.exit(1);
+    }
+    transitionId = found.id;
+  }
+  
+  await client.transitionIssue(issueKey, transitionId);
+  console.log(`Transitioned ${issueKey} successfully`);
+}
+
+async function addLabels(issueKey: string, labels: string[]): Promise<void> {
+  const client = getJiraClient();
+  const operations = labels.map(label => ({ add: label }));
+  
+  await client.updateLabels(issueKey, operations);
+  console.log(`Added labels [${labels.join(', ')}] to ${issueKey}`);
+}
+
+async function removeLabels(issueKey: string, labels: string[]): Promise<void> {
+  const client = getJiraClient();
+  const operations = labels.map(label => ({ remove: label }));
+  
+  await client.updateLabels(issueKey, operations);
+  console.log(`Removed labels [${labels.join(', ')}] from ${issueKey}`);
+}
+
+async function setLabels(issueKey: string, labels: string[]): Promise<void> {
+  const client = getJiraClient();
+  
+  await client.setLabels(issueKey, labels);
+  console.log(`Set labels [${labels.join(', ')}] on ${issueKey}`);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
@@ -172,6 +258,56 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         await addComment(issueKey, markdownParts.join(' '));
+        break;
+      }
+
+      case 'transitions': {
+        const issueKey = args[1];
+        if (!issueKey) {
+          console.error('Error: transitions requires issueKey');
+          process.exit(1);
+        }
+        await listTransitions(issueKey);
+        break;
+      }
+
+      case 'transition': {
+        const [, issueKey, transitionIdOrName] = args;
+        if (!issueKey || !transitionIdOrName) {
+          console.error('Error: transition requires issueKey and transitionId or statusName');
+          process.exit(1);
+        }
+        await transitionIssue(issueKey, transitionIdOrName);
+        break;
+      }
+
+      case 'add-labels': {
+        const [, issueKey, ...labels] = args;
+        if (!issueKey || labels.length === 0) {
+          console.error('Error: add-labels requires issueKey and at least one label');
+          process.exit(1);
+        }
+        await addLabels(issueKey, labels);
+        break;
+      }
+
+      case 'remove-labels': {
+        const [, issueKey, ...labels] = args;
+        if (!issueKey || labels.length === 0) {
+          console.error('Error: remove-labels requires issueKey and at least one label');
+          process.exit(1);
+        }
+        await removeLabels(issueKey, labels);
+        break;
+      }
+
+      case 'set-labels': {
+        const [, issueKey, ...labels] = args;
+        if (!issueKey) {
+          console.error('Error: set-labels requires issueKey');
+          process.exit(1);
+        }
+        await setLabels(issueKey, labels);
         break;
       }
 
