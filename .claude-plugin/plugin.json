@@ -1,10 +1,10 @@
 {
   "name": "jira-skill",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Jira Cloud API integration for worklog management, issue operations, and description updates with ADF support.",
   "author": {
     "name": "kilhyeonjun",
-    "email": "hyeonjun@gameduo.net"
+    "email": "kboxstar@gmail.com"
   },
   "homepage": "https://github.com/kilhyeonjun/jira-skill",
   "repository": "https://github.com/kilhyeonjun/jira-skill",
