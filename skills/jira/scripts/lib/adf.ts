@@ -40,22 +40,30 @@ export function createHeading(text: string, level: 1 | 2 | 3 | 4 | 5 | 6 = 2): A
   };
 }
 
-export function createBulletList(items: string[]): AdfNode {
+export function createBulletList(items: string[], parseLinks = false): AdfNode {
   return {
     type: 'bulletList',
     content: items.map(item => ({
       type: 'listItem',
-      content: [createParagraph(item)],
+      content: [
+        parseLinks
+          ? { type: 'paragraph', content: parseInlineLinks(item) }
+          : createParagraph(item),
+      ],
     })),
   };
 }
 
-export function createOrderedList(items: string[]): AdfNode {
+export function createOrderedList(items: string[], parseLinks = false): AdfNode {
   return {
     type: 'orderedList',
     content: items.map(item => ({
       type: 'listItem',
-      content: [createParagraph(item)],
+      content: [
+        parseLinks
+          ? { type: 'paragraph', content: parseInlineLinks(item) }
+          : createParagraph(item),
+      ],
     })),
   };
 }
@@ -167,14 +175,14 @@ export function markdownToAdf(markdown: string): AdfDocument {
   
   const flushBulletList = () => {
     if (bulletItems.length > 0) {
-      content.push(createBulletList(bulletItems));
+      content.push(createBulletList(bulletItems, true));
       bulletItems = [];
     }
   };
   
   const flushOrderedList = () => {
     if (orderedItems.length > 0) {
-      content.push(createOrderedList(orderedItems));
+      content.push(createOrderedList(orderedItems, true));
       orderedItems = [];
     }
   };
