@@ -66,6 +66,10 @@ Commands:
   set-labels <issueKey> <label1> [label2] ...
     Replace all labels on an issue
     Example: npx tsx issue.ts set-labels DEV-1234 bugfix frontend
+
+  convert-to-subtask <parentKey> <issueKey1> [issueKey2] ...
+    Convert issues to subtasks of a parent issue (uses Bulk Move API)
+    Example: npx tsx issue.ts convert-to-subtask DEV-100 DEV-101 DEV-102 DEV-103
 `);
 }
 
@@ -237,6 +241,34 @@ async function setLabels(issueKey: string, labels: string[]): Promise<void> {
   console.log(`Set labels [${labels.join(', ')}] on ${issueKey}`);
 }
 
+async function convertToSubtask(parentKey: string, issueKeys: string[]): Promise<void> {
+  const client = getJiraClient();
+  
+  console.log(`Converting ${issueKeys.length} issue(s) to subtasks of ${parentKey}...`);
+  
+  const result = await client.bulkMoveToSubtask(issueKeys, parentKey);
+  console.log(`Bulk move task started: ${result.taskId}`);
+  
+  let status = await client.getBulkOperationStatus(result.taskId);
+  while (status.status === 'RUNNING' || status.status === 'ENQUEUED') {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    status = await client.getBulkOperationStatus(result.taskId);
+    console.log(`Progress: ${status.progressPercent}%`);
+  }
+  
+  if (status.status === 'COMPLETE') {
+    console.log(`\nCompleted! ${status.totalIssueCount} issue(s) converted to subtasks.`);
+    if (status.invalidOrInaccessibleIssueCount && status.invalidOrInaccessibleIssueCount > 0) {
+      console.log(`Warning: ${status.invalidOrInaccessibleIssueCount} issue(s) were invalid or inaccessible.`);
+    }
+  } else {
+    console.error(`\nFailed with status: ${status.status}`);
+    if (status.failedAccessibleIssues) {
+      console.error('Failed issues:', JSON.stringify(status.failedAccessibleIssues, null, 2));
+    }
+  }
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
@@ -394,6 +426,16 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         await setLabels(issueKey, labels);
+        break;
+      }
+
+      case 'convert-to-subtask': {
+        const [, parentKey, ...issueKeys] = args;
+        if (!parentKey || issueKeys.length === 0) {
+          console.error('Error: convert-to-subtask requires parentKey and at least one issueKey');
+          process.exit(1);
+        }
+        await convertToSubtask(parentKey, issueKeys);
         break;
       }
 

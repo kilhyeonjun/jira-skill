@@ -198,6 +198,23 @@ npx tsx scripts/issue.ts set-labels DEV-1234 bugfix frontend
 
 Note: This replaces all existing labels. Use an empty label list to clear all labels.
 
+## Convert to Subtask
+
+Script: `scripts/issue.ts`
+
+Convert existing issues to subtasks of a parent issue using the Bulk Move API.
+
+```bash
+npx tsx scripts/issue.ts convert-to-subtask <parentKey> <issueKey1> [issueKey2] ...
+```
+
+Example:
+```bash
+npx tsx scripts/issue.ts convert-to-subtask DEV-100 DEV-101 DEV-102 DEV-103
+```
+
+Note: This uses Jira's Bulk Move API to change issue types to Subtask and set the parent. The operation is asynchronous and the script waits for completion.
+
 ## Date and Time Formats
 
 ### Date Formats
@@ -287,3 +304,4 @@ npx tsx scripts/issue.ts append-description DEV-1234 "## References\n- [Design D
 | Add labels | `npx tsx scripts/issue.ts add-labels <key> <labels...>` |
 | Remove labels | `npx tsx scripts/issue.ts remove-labels <key> <labels...>` |
 | Set labels | `npx tsx scripts/issue.ts set-labels <key> <labels...>` |
+| Convert to subtask | `npx tsx scripts/issue.ts convert-to-subtask <parent> <keys...>` |

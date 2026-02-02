@@ -348,6 +348,59 @@ export class JiraClient {
       '/rest/api/3/myself'
     );
   }
+
+  async getProject(projectKeyOrId: string): Promise<{ id: string; key: string; name: string }> {
+    return this.request<{ id: string; key: string; name: string }>(
+      'GET',
+      `/rest/api/3/project/${projectKeyOrId}`
+    );
+  }
+
+  async bulkMoveToSubtask(
+    issueKeys: string[],
+    parentKey: string,
+    subtaskTypeId: string = '10005'
+  ): Promise<{ taskId: string }> {
+    // Extract project key from parent
+    const projectKey = parentKey.split('-')[0];
+    
+    // Key format: projectKey,issueTypeId,parentKey
+    const targetKey = `${projectKey},${subtaskTypeId},${parentKey}`;
+    
+    return this.request<{ taskId: string }>(
+      'POST',
+      '/rest/api/3/bulk/issues/move',
+      {
+        sendBulkNotification: false,
+        targetToSourcesMapping: {
+          [targetKey]: {
+            issueIdsOrKeys: issueKeys,
+            inferFieldDefaults: true,
+            inferStatusDefaults: true,
+            inferSubtaskTypeDefault: true,
+          },
+        },
+      }
+    );
+  }
+
+  async getBulkOperationStatus(taskId: string): Promise<{
+    taskId: string;
+    status: string;
+    progressPercent: number;
+    totalIssueCount?: number;
+    invalidOrInaccessibleIssueCount?: number;
+    failedAccessibleIssues?: Record<string, unknown>;
+  }> {
+    return this.request<{
+      taskId: string;
+      status: string;
+      progressPercent: number;
+      totalIssueCount?: number;
+      invalidOrInaccessibleIssueCount?: number;
+      failedAccessibleIssues?: Record<string, unknown>;
+    }>('GET', `/rest/api/3/bulk/queue/${taskId}`);
+  }
 }
 
 let _client: JiraClient | null = null;
