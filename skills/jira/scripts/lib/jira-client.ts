@@ -93,6 +93,7 @@ export interface CreateIssueInput {
   assigneeAccountId?: string;
   labels?: string[];
   parentKey?: string;
+  customFields?: Record<string, unknown>;
 }
 
 export interface CreateIssueResponse {
@@ -329,6 +330,9 @@ export class JiraClient {
     }
     if (input.parentKey) {
       fields.parent = { key: input.parentKey };
+    }
+    if (input.customFields) {
+      Object.assign(fields, input.customFields);
     }
 
     return this.request<CreateIssueResponse>(

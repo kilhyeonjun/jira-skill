@@ -9,11 +9,17 @@ function printUsage(): void {
 Usage: npx tsx issue.ts <command> [options]
 
 Commands:
-  create <projectKey> <issueType> <summary> [--description <md>] [--labels <l1,l2>] [--assignee me]
+  create <projectKey> <issueType> <summary> [options]
     Create a new issue
+    Options:
+      --description <md>     Issue description in markdown
+      --labels <l1,l2>       Comma-separated labels
+      --assignee me          Assign to current user
+      --field <key>=<value>  Custom field (can be used multiple times)
     Example: npx tsx issue.ts create DEV Task "Implement feature X"
     Example: npx tsx issue.ts create DEV Bug "Fix login error" --description "Steps to reproduce..."
     Example: npx tsx issue.ts create DEV Task "My task" --assignee me --labels "backend,urgent"
+    Example: npx tsx issue.ts create DEV Task "My task" --field customfield_10066=PROJECT
 
   get <issueKey>
     Get issue details
@@ -67,6 +73,7 @@ interface CreateOptions {
   description?: string;
   labels?: string[];
   assignee?: string;
+  customFields?: Record<string, unknown>;
 }
 
 async function createIssue(
@@ -90,6 +97,7 @@ async function createIssue(
     description: options.description ? markdownToAdf(options.description) : undefined,
     labels: options.labels,
     assigneeAccountId,
+    customFields: options.customFields,
   });
 
   console.log(`Created issue: ${result.key}`);
@@ -255,6 +263,23 @@ async function main(): Promise<void> {
             options.labels = rest[++i].split(',').map(l => l.trim());
           } else if (rest[i] === '--assignee' && rest[i + 1]) {
             options.assignee = rest[++i];
+          } else if (rest[i] === '--field' && rest[i + 1]) {
+            const fieldArg = rest[++i];
+            const eqIndex = fieldArg.indexOf('=');
+            if (eqIndex > 0) {
+              const key = fieldArg.slice(0, eqIndex);
+              let value: unknown = fieldArg.slice(eqIndex + 1);
+              // Parse JSON if value looks like array or object
+              if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
+                try {
+                  value = JSON.parse(value);
+                } catch {
+                  // Keep as string if JSON parse fails
+                }
+              }
+              options.customFields = options.customFields || {};
+              options.customFields[key] = value;
+            }
           }
         }
         
