@@ -70,6 +70,13 @@ Commands:
   convert-to-subtask <parentKey> <issueKey1> [issueKey2] ...
     Convert issues to subtasks of a parent issue (uses Bulk Move API)
     Example: npx tsx issue.ts convert-to-subtask DEV-100 DEV-101 DEV-102 DEV-103
+
+  changelog <issueKey> [--field <fieldName>]
+    View issue changelog (history of changes)
+    Options:
+      --field <name>    Filter by field name (e.g., status, assignee, summary)
+    Example: npx tsx issue.ts changelog DEV-1234
+    Example: npx tsx issue.ts changelog DEV-1234 --field status
 `);
 }
 
@@ -239,6 +246,29 @@ async function setLabels(issueKey: string, labels: string[]): Promise<void> {
   
   await client.setLabels(issueKey, labels);
   console.log(`Set labels [${labels.join(', ')}] on ${issueKey}`);
+}
+
+async function viewChangelog(issueKey: string, filterField?: string): Promise<void> {
+  const client = getJiraClient();
+  const changelog = await client.getChangelog(issueKey);
+
+  console.log(`Changelog for ${issueKey} (${changelog.total} changes):\n`);
+
+  for (const history of changelog.histories) {
+    const items = filterField 
+      ? history.items.filter(item => item.field.toLowerCase() === filterField.toLowerCase())
+      : history.items;
+
+    if (items.length === 0) continue;
+
+    const date = new Date(history.created).toLocaleString('ko-KR');
+    console.log(`[${date}] by ${history.author.displayName}`);
+    
+    for (const item of items) {
+      console.log(`  ${item.field}: "${item.fromString || '(none)'}" → "${item.toString || '(none)'}"`);
+    }
+    console.log('');
+  }
 }
 
 async function convertToSubtask(parentKey: string, issueKeys: string[]): Promise<void> {
@@ -436,6 +466,22 @@ async function main(): Promise<void> {
           process.exit(1);
         }
         await convertToSubtask(parentKey, issueKeys);
+        break;
+      }
+
+      case 'changelog': {
+        const [, issueKey, ...rest] = args;
+        if (!issueKey) {
+          console.error('Error: changelog requires issueKey');
+          process.exit(1);
+        }
+        let filterField: string | undefined;
+        for (let i = 0; i < rest.length; i++) {
+          if (rest[i] === '--field' && rest[i + 1]) {
+            filterField = rest[++i];
+          }
+        }
+        await viewChangelog(issueKey, filterField);
         break;
       }
 

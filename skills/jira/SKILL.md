@@ -215,6 +215,28 @@ npx tsx scripts/issue.ts convert-to-subtask DEV-100 DEV-101 DEV-102 DEV-103
 
 Note: This uses Jira's Bulk Move API to change issue types to Subtask and set the parent. The operation is asynchronous and the script waits for completion.
 
+## View Changelog
+
+Script: `scripts/issue.ts`
+
+View the history of changes made to an issue.
+
+```bash
+npx tsx scripts/issue.ts changelog <issueKey> [--field <fieldName>]
+```
+
+Examples:
+```bash
+# View all changes
+npx tsx scripts/issue.ts changelog DEV-1234
+
+# Filter by specific field
+npx tsx scripts/issue.ts changelog DEV-1234 --field status
+npx tsx scripts/issue.ts changelog DEV-1234 --field assignee
+```
+
+Output shows each change with timestamp, author, and field changes (from → to).
+
 ## Date and Time Formats
 
 ### Date Formats
@@ -305,3 +327,4 @@ npx tsx scripts/issue.ts append-description DEV-1234 "## References\n- [Design D
 | Remove labels | `npx tsx scripts/issue.ts remove-labels <key> <labels...>` |
 | Set labels | `npx tsx scripts/issue.ts set-labels <key> <labels...>` |
 | Convert to subtask | `npx tsx scripts/issue.ts convert-to-subtask <parent> <keys...>` |
+| View changelog | `npx tsx scripts/issue.ts changelog <key> [--field <name>]` |

@@ -85,6 +85,33 @@ export interface LabelOperation {
   remove?: string;
 }
 
+export interface ChangelogItem {
+  field: string;
+  fieldtype: string;
+  from: string | null;
+  fromString: string | null;
+  to: string | null;
+  toString: string | null;
+}
+
+export interface ChangelogHistory {
+  id: string;
+  created: string;
+  author: {
+    accountId: string;
+    displayName: string;
+    emailAddress?: string;
+  };
+  items: ChangelogItem[];
+}
+
+export interface ChangelogResponse {
+  maxResults: number;
+  startAt: number;
+  total: number;
+  histories: ChangelogHistory[];
+}
+
 export interface CreateIssueInput {
   projectKey: string;
   summary: string;
@@ -400,6 +427,14 @@ export class JiraClient {
       invalidOrInaccessibleIssueCount?: number;
       failedAccessibleIssues?: Record<string, unknown>;
     }>('GET', `/rest/api/3/bulk/queue/${taskId}`);
+  }
+
+  async getChangelog(issueKey: string): Promise<ChangelogResponse> {
+    const response = await this.request<{ changelog: ChangelogResponse }>(
+      'GET',
+      `/rest/api/3/issue/${issueKey}?expand=changelog&fields=key`
+    );
+    return response.changelog;
   }
 }
 
