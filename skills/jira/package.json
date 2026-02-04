@@ -1,6 +1,6 @@
 {
   "name": "jira-skill",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Jira API skill for Claude Code - worklog, issue, transition, label management with ADF support",
   "type": "module",
   "scripts": {

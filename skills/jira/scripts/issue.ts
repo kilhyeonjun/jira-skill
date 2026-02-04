@@ -1,8 +1,8 @@
 #!/usr/bin/env npx tsx
 
-import { getJiraClient } from './lib/jira-client.js';
-import { markdownToAdf, adfToPlainText } from './lib/adf.js';
-import * as fs from 'fs';
+import { getJiraClient } from "./lib/jira-client.js";
+import { markdownToAdf, adfToPlainText } from "./lib/adf.js";
+import * as fs from "fs";
 
 function printUsage(): void {
   console.log(`
@@ -77,6 +77,10 @@ Commands:
       --field <name>    Filter by field name (e.g., status, assignee, summary)
     Example: npx tsx issue.ts changelog DEV-1234
     Example: npx tsx issue.ts changelog DEV-1234 --field status
+
+  add-weblink <issueKey> <url> <title>
+    Add a web link to an issue
+    Example: npx tsx issue.ts add-weblink DEV-1234 "https://slack.com/archives/..." "Slack: 관련 논의"
 `);
 }
 
@@ -91,12 +95,12 @@ async function createIssue(
   projectKey: string,
   issueType: string,
   summary: string,
-  options: CreateOptions
+  options: CreateOptions,
 ): Promise<void> {
   const client = getJiraClient();
-  
+
   let assigneeAccountId: string | undefined;
-  if (options.assignee === 'me') {
+  if (options.assignee === "me") {
     const currentUser = await client.getCurrentUser();
     assigneeAccountId = currentUser.accountId;
   }
@@ -105,7 +109,9 @@ async function createIssue(
     projectKey,
     issueType,
     summary,
-    description: options.description ? markdownToAdf(options.description) : undefined,
+    description: options.description
+      ? markdownToAdf(options.description)
+      : undefined,
     labels: options.labels,
     assigneeAccountId,
     customFields: options.customFields,
@@ -122,10 +128,16 @@ async function getIssue(issueKey: string): Promise<void> {
   console.log(`Issue: ${issue.key}`);
   console.log(`Summary: ${issue.fields.summary}`);
   console.log(`Status: ${issue.fields.status.name}`);
-  console.log(`Assignee: ${issue.fields.assignee?.displayName || 'Unassigned'}`);
-  console.log(`Created: ${new Date(issue.fields.created).toLocaleString('ko-KR')}`);
-  console.log(`Updated: ${new Date(issue.fields.updated).toLocaleString('ko-KR')}`);
-  
+  console.log(
+    `Assignee: ${issue.fields.assignee?.displayName || "Unassigned"}`,
+  );
+  console.log(
+    `Created: ${new Date(issue.fields.created).toLocaleString("ko-KR")}`,
+  );
+  console.log(
+    `Updated: ${new Date(issue.fields.updated).toLocaleString("ko-KR")}`,
+  );
+
   if (issue.fields.description) {
     console.log(`\nDescription:`);
     console.log(adfToPlainText(issue.fields.description));
@@ -137,40 +149,53 @@ async function searchIssues(jql: string): Promise<void> {
   const result = await client.searchIssues(jql);
 
   console.log(`Found ${result.total} issue(s):\n`);
-  
+
   for (const issue of result.issues) {
     console.log(`  ${issue.key}: ${issue.fields.summary}`);
     console.log(`    Status: ${issue.fields.status.name}`);
-    console.log(`    Assignee: ${issue.fields.assignee?.displayName || 'Unassigned'}`);
-    console.log('');
+    console.log(
+      `    Assignee: ${issue.fields.assignee?.displayName || "Unassigned"}`,
+    );
+    console.log("");
   }
 }
 
-async function updateDescription(issueKey: string, markdown: string): Promise<void> {
+async function updateDescription(
+  issueKey: string,
+  markdown: string,
+): Promise<void> {
   const client = getJiraClient();
   const adf = markdownToAdf(markdown);
-  
+
   await client.updateIssueDescription(issueKey, adf);
   console.log(`Description updated for ${issueKey}`);
 }
 
-async function updateDescriptionFromFile(issueKey: string, filepath: string): Promise<void> {
-  const markdown = fs.readFileSync(filepath, 'utf-8');
+async function updateDescriptionFromFile(
+  issueKey: string,
+  filepath: string,
+): Promise<void> {
+  const markdown = fs.readFileSync(filepath, "utf-8");
   await updateDescription(issueKey, markdown);
 }
 
-async function appendDescription(issueKey: string, markdown: string): Promise<void> {
+async function appendDescription(
+  issueKey: string,
+  markdown: string,
+): Promise<void> {
   const client = getJiraClient();
   const issue = await client.getIssue(issueKey);
-  
-  let existingText = '';
+
+  let existingText = "";
   if (issue.fields.description) {
     existingText = adfToPlainText(issue.fields.description);
   }
-  
-  const newMarkdown = existingText ? `${existingText}\n\n${markdown}` : markdown;
+
+  const newMarkdown = existingText
+    ? `${existingText}\n\n${markdown}`
+    : markdown;
   const adf = markdownToAdf(newMarkdown);
-  
+
   await client.updateIssueDescription(issueKey, adf);
   console.log(`Description appended for ${issueKey}`);
 }
@@ -178,7 +203,7 @@ async function appendDescription(issueKey: string, markdown: string): Promise<vo
 async function addComment(issueKey: string, markdown: string): Promise<void> {
   const client = getJiraClient();
   const adf = markdownToAdf(markdown);
-  
+
   await client.addComment(issueKey, adf);
   console.log(`Comment added to ${issueKey}`);
 }
@@ -188,31 +213,39 @@ async function listTransitions(issueKey: string): Promise<void> {
   const result = await client.getTransitions(issueKey);
 
   console.log(`Available transitions for ${issueKey}:\n`);
-  
+
   for (const transition of result.transitions) {
     console.log(`  ID: ${transition.id}`);
     console.log(`  Name: ${transition.name}`);
     console.log(`  To Status: ${transition.to.name}`);
     if (transition.to.statusCategory) {
-      console.log(`  Category: ${transition.to.statusCategory.name} (${transition.to.statusCategory.colorName})`);
+      console.log(
+        `  Category: ${transition.to.statusCategory.name} (${transition.to.statusCategory.colorName})`,
+      );
     }
-    console.log('');
+    console.log("");
   }
 }
 
-async function transitionIssue(issueKey: string, transitionIdOrName: string): Promise<void> {
+async function transitionIssue(
+  issueKey: string,
+  transitionIdOrName: string,
+): Promise<void> {
   const client = getJiraClient();
   const transitions = await client.getTransitions(issueKey);
-  
+
   let transitionId = transitionIdOrName;
-  
+
   if (!/^\d+$/.test(transitionIdOrName)) {
     const found = transitions.transitions.find(
-      t => t.name.toLowerCase() === transitionIdOrName.toLowerCase() ||
-           t.to.name.toLowerCase() === transitionIdOrName.toLowerCase()
+      (t) =>
+        t.name.toLowerCase() === transitionIdOrName.toLowerCase() ||
+        t.to.name.toLowerCase() === transitionIdOrName.toLowerCase(),
     );
     if (!found) {
-      console.error(`Transition "${transitionIdOrName}" not found. Available transitions:`);
+      console.error(
+        `Transition "${transitionIdOrName}" not found. Available transitions:`,
+      );
       for (const t of transitions.transitions) {
         console.error(`  - ${t.name} (ID: ${t.id}) -> ${t.to.name}`);
       }
@@ -220,81 +253,113 @@ async function transitionIssue(issueKey: string, transitionIdOrName: string): Pr
     }
     transitionId = found.id;
   }
-  
+
   await client.transitionIssue(issueKey, transitionId);
   console.log(`Transitioned ${issueKey} successfully`);
 }
 
 async function addLabels(issueKey: string, labels: string[]): Promise<void> {
   const client = getJiraClient();
-  const operations = labels.map(label => ({ add: label }));
-  
+  const operations = labels.map((label) => ({ add: label }));
+
   await client.updateLabels(issueKey, operations);
-  console.log(`Added labels [${labels.join(', ')}] to ${issueKey}`);
+  console.log(`Added labels [${labels.join(", ")}] to ${issueKey}`);
 }
 
 async function removeLabels(issueKey: string, labels: string[]): Promise<void> {
   const client = getJiraClient();
-  const operations = labels.map(label => ({ remove: label }));
-  
+  const operations = labels.map((label) => ({ remove: label }));
+
   await client.updateLabels(issueKey, operations);
-  console.log(`Removed labels [${labels.join(', ')}] from ${issueKey}`);
+  console.log(`Removed labels [${labels.join(", ")}] from ${issueKey}`);
 }
 
 async function setLabels(issueKey: string, labels: string[]): Promise<void> {
   const client = getJiraClient();
-  
+
   await client.setLabels(issueKey, labels);
-  console.log(`Set labels [${labels.join(', ')}] on ${issueKey}`);
+  console.log(`Set labels [${labels.join(", ")}] on ${issueKey}`);
 }
 
-async function viewChangelog(issueKey: string, filterField?: string): Promise<void> {
+async function viewChangelog(
+  issueKey: string,
+  filterField?: string,
+): Promise<void> {
   const client = getJiraClient();
   const changelog = await client.getChangelog(issueKey);
 
   console.log(`Changelog for ${issueKey} (${changelog.total} changes):\n`);
 
   for (const history of changelog.histories) {
-    const items = filterField 
-      ? history.items.filter(item => item.field.toLowerCase() === filterField.toLowerCase())
+    const items = filterField
+      ? history.items.filter(
+          (item) => item.field.toLowerCase() === filterField.toLowerCase(),
+        )
       : history.items;
 
     if (items.length === 0) continue;
 
-    const date = new Date(history.created).toLocaleString('ko-KR');
+    const date = new Date(history.created).toLocaleString("ko-KR");
     console.log(`[${date}] by ${history.author.displayName}`);
-    
+
     for (const item of items) {
-      console.log(`  ${item.field}: "${item.fromString || '(none)'}" → "${item.toString || '(none)'}"`);
+      console.log(
+        `  ${item.field}: "${item.fromString || "(none)"}" → "${item.toString || "(none)"}"`,
+      );
     }
-    console.log('');
+    console.log("");
   }
 }
 
-async function convertToSubtask(parentKey: string, issueKeys: string[]): Promise<void> {
+async function addWeblink(
+  issueKey: string,
+  url: string,
+  title: string,
+): Promise<void> {
   const client = getJiraClient();
-  
-  console.log(`Converting ${issueKeys.length} issue(s) to subtasks of ${parentKey}...`);
-  
+  await client.addRemoteLink(issueKey, url, title);
+  console.log(`Web link added to ${issueKey}: ${title}`);
+}
+
+async function convertToSubtask(
+  parentKey: string,
+  issueKeys: string[],
+): Promise<void> {
+  const client = getJiraClient();
+
+  console.log(
+    `Converting ${issueKeys.length} issue(s) to subtasks of ${parentKey}...`,
+  );
+
   const result = await client.bulkMoveToSubtask(issueKeys, parentKey);
   console.log(`Bulk move task started: ${result.taskId}`);
-  
+
   let status = await client.getBulkOperationStatus(result.taskId);
-  while (status.status === 'RUNNING' || status.status === 'ENQUEUED') {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  while (status.status === "RUNNING" || status.status === "ENQUEUED") {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     status = await client.getBulkOperationStatus(result.taskId);
     console.log(`Progress: ${status.progressPercent}%`);
   }
-  
-  if (status.status === 'COMPLETE') {
-    console.log(`\nCompleted! ${status.totalIssueCount} issue(s) converted to subtasks.`);
-    if (status.invalidOrInaccessibleIssueCount && status.invalidOrInaccessibleIssueCount > 0) {
-      console.log(`Warning: ${status.invalidOrInaccessibleIssueCount} issue(s) were invalid or inaccessible.`);
+
+  if (status.status === "COMPLETE") {
+    console.log(
+      `\nCompleted! ${status.totalIssueCount} issue(s) converted to subtasks.`,
+    );
+    if (
+      status.invalidOrInaccessibleIssueCount &&
+      status.invalidOrInaccessibleIssueCount > 0
+    ) {
+      console.log(
+        `Warning: ${status.invalidOrInaccessibleIssueCount} issue(s) were invalid or inaccessible.`,
+      );
     }
   } else {
     console.error(`\nFailed with status: ${status.status}`);
     if (status.failedAccessibleIssues) {
-      console.error('Failed issues:', JSON.stringify(status.failedAccessibleIssues, null, 2));
+      console.error(
+        "Failed issues:",
+        JSON.stringify(status.failedAccessibleIssues, null, 2),
+      );
     }
   }
 }
@@ -303,36 +368,41 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0];
 
-  if (!command || command === '--help' || command === '-h') {
+  if (!command || command === "--help" || command === "-h") {
     printUsage();
     process.exit(0);
   }
 
   try {
     switch (command) {
-      case 'create': {
+      case "create": {
         const [, projectKey, issueType, summary, ...rest] = args;
         if (!projectKey || !issueType || !summary) {
-          console.error('Error: create requires projectKey, issueType, and summary');
+          console.error(
+            "Error: create requires projectKey, issueType, and summary",
+          );
           process.exit(1);
         }
-        
+
         const options: CreateOptions = {};
         for (let i = 0; i < rest.length; i++) {
-          if (rest[i] === '--description' && rest[i + 1]) {
+          if (rest[i] === "--description" && rest[i + 1]) {
             options.description = rest[++i];
-          } else if (rest[i] === '--labels' && rest[i + 1]) {
-            options.labels = rest[++i].split(',').map(l => l.trim());
-          } else if (rest[i] === '--assignee' && rest[i + 1]) {
+          } else if (rest[i] === "--labels" && rest[i + 1]) {
+            options.labels = rest[++i].split(",").map((l) => l.trim());
+          } else if (rest[i] === "--assignee" && rest[i + 1]) {
             options.assignee = rest[++i];
-          } else if (rest[i] === '--field' && rest[i + 1]) {
+          } else if (rest[i] === "--field" && rest[i + 1]) {
             const fieldArg = rest[++i];
-            const eqIndex = fieldArg.indexOf('=');
+            const eqIndex = fieldArg.indexOf("=");
             if (eqIndex > 0) {
               const key = fieldArg.slice(0, eqIndex);
               let value: unknown = fieldArg.slice(eqIndex + 1);
               // Parse JSON if value looks like array or object
-              if (typeof value === 'string' && (value.startsWith('[') || value.startsWith('{'))) {
+              if (
+                typeof value === "string" &&
+                (value.startsWith("[") || value.startsWith("{"))
+              ) {
                 try {
                   value = JSON.parse(value);
                 } catch {
@@ -344,144 +414,168 @@ async function main(): Promise<void> {
             }
           }
         }
-        
+
         await createIssue(projectKey, issueType, summary, options);
         break;
       }
 
-      case 'get': {
+      case "get": {
         const issueKey = args[1];
         if (!issueKey) {
-          console.error('Error: get requires issueKey');
+          console.error("Error: get requires issueKey");
           process.exit(1);
         }
         await getIssue(issueKey);
         break;
       }
 
-      case 'search': {
+      case "search": {
         const jql = args[1];
         if (!jql) {
-          console.error('Error: search requires JQL query');
+          console.error("Error: search requires JQL query");
           process.exit(1);
         }
         await searchIssues(jql);
         break;
       }
 
-      case 'update-description': {
+      case "update-description": {
         const [, issueKey, ...markdownParts] = args;
         if (!issueKey || markdownParts.length === 0) {
-          console.error('Error: update-description requires issueKey and markdown');
+          console.error(
+            "Error: update-description requires issueKey and markdown",
+          );
           process.exit(1);
         }
-        await updateDescription(issueKey, markdownParts.join(' '));
+        await updateDescription(issueKey, markdownParts.join(" "));
         break;
       }
 
-      case 'update-description-file': {
+      case "update-description-file": {
         const [, issueKey, filepath] = args;
         if (!issueKey || !filepath) {
-          console.error('Error: update-description-file requires issueKey and filepath');
+          console.error(
+            "Error: update-description-file requires issueKey and filepath",
+          );
           process.exit(1);
         }
         await updateDescriptionFromFile(issueKey, filepath);
         break;
       }
 
-      case 'append-description': {
+      case "append-description": {
         const [, issueKey, ...markdownParts] = args;
         if (!issueKey || markdownParts.length === 0) {
-          console.error('Error: append-description requires issueKey and markdown');
+          console.error(
+            "Error: append-description requires issueKey and markdown",
+          );
           process.exit(1);
         }
-        await appendDescription(issueKey, markdownParts.join(' '));
+        await appendDescription(issueKey, markdownParts.join(" "));
         break;
       }
 
-      case 'comment': {
+      case "comment": {
         const [, issueKey, ...markdownParts] = args;
         if (!issueKey || markdownParts.length === 0) {
-          console.error('Error: comment requires issueKey and markdown');
+          console.error("Error: comment requires issueKey and markdown");
           process.exit(1);
         }
-        await addComment(issueKey, markdownParts.join(' '));
+        await addComment(issueKey, markdownParts.join(" "));
         break;
       }
 
-      case 'transitions': {
+      case "transitions": {
         const issueKey = args[1];
         if (!issueKey) {
-          console.error('Error: transitions requires issueKey');
+          console.error("Error: transitions requires issueKey");
           process.exit(1);
         }
         await listTransitions(issueKey);
         break;
       }
 
-      case 'transition': {
+      case "transition": {
         const [, issueKey, transitionIdOrName] = args;
         if (!issueKey || !transitionIdOrName) {
-          console.error('Error: transition requires issueKey and transitionId or statusName');
+          console.error(
+            "Error: transition requires issueKey and transitionId or statusName",
+          );
           process.exit(1);
         }
         await transitionIssue(issueKey, transitionIdOrName);
         break;
       }
 
-      case 'add-labels': {
+      case "add-labels": {
         const [, issueKey, ...labels] = args;
         if (!issueKey || labels.length === 0) {
-          console.error('Error: add-labels requires issueKey and at least one label');
+          console.error(
+            "Error: add-labels requires issueKey and at least one label",
+          );
           process.exit(1);
         }
         await addLabels(issueKey, labels);
         break;
       }
 
-      case 'remove-labels': {
+      case "remove-labels": {
         const [, issueKey, ...labels] = args;
         if (!issueKey || labels.length === 0) {
-          console.error('Error: remove-labels requires issueKey and at least one label');
+          console.error(
+            "Error: remove-labels requires issueKey and at least one label",
+          );
           process.exit(1);
         }
         await removeLabels(issueKey, labels);
         break;
       }
 
-      case 'set-labels': {
+      case "set-labels": {
         const [, issueKey, ...labels] = args;
         if (!issueKey) {
-          console.error('Error: set-labels requires issueKey');
+          console.error("Error: set-labels requires issueKey");
           process.exit(1);
         }
         await setLabels(issueKey, labels);
         break;
       }
 
-      case 'convert-to-subtask': {
+      case "convert-to-subtask": {
         const [, parentKey, ...issueKeys] = args;
         if (!parentKey || issueKeys.length === 0) {
-          console.error('Error: convert-to-subtask requires parentKey and at least one issueKey');
+          console.error(
+            "Error: convert-to-subtask requires parentKey and at least one issueKey",
+          );
           process.exit(1);
         }
         await convertToSubtask(parentKey, issueKeys);
         break;
       }
 
-      case 'changelog': {
+      case "changelog": {
         const [, issueKey, ...rest] = args;
         if (!issueKey) {
-          console.error('Error: changelog requires issueKey');
+          console.error("Error: changelog requires issueKey");
           process.exit(1);
         }
         let filterField: string | undefined;
         for (let i = 0; i < rest.length; i++) {
-          if (rest[i] === '--field' && rest[i + 1]) {
+          if (rest[i] === "--field" && rest[i + 1]) {
             filterField = rest[++i];
           }
         }
         await viewChangelog(issueKey, filterField);
+        break;
+      }
+
+      case "add-weblink": {
+        const [, issueKey, url, ...titleParts] = args;
+        if (!issueKey || !url || titleParts.length === 0) {
+          console.error("Error: add-weblink requires issueKey, url, and title");
+          process.exit(1);
+        }
+        await addWeblink(issueKey, url, titleParts.join(" "));
         break;
       }
 
@@ -491,7 +585,7 @@ async function main(): Promise<void> {
         process.exit(1);
     }
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : error);
+    console.error("Error:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

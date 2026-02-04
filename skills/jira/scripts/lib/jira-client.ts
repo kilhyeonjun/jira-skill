@@ -436,6 +436,23 @@ export class JiraClient {
     );
     return response.changelog;
   }
+
+  async addRemoteLink(
+    issueKey: string,
+    url: string,
+    title: string
+  ): Promise<{ id: number; self: string }> {
+    return this.request<{ id: number; self: string }>(
+      'POST',
+      `/rest/api/3/issue/${issueKey}/remotelink`,
+      {
+        object: {
+          url,
+          title,
+        },
+      }
+    );
+  }
 }
 
 let _client: JiraClient | null = null;
