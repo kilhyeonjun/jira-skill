@@ -112,16 +112,47 @@ export function createHorizontalRule(): AdfNode {
   return { type: 'rule' };
 }
 
+export function createTable(rows: string[][]): AdfNode {
+  return {
+    type: 'table',
+    attrs: {
+      isNumberColumnEnabled: false,
+      layout: 'default',
+    },
+    content: rows.map((row, rowIndex) => ({
+      type: 'tableRow',
+      content: row.map(cell => ({
+        type: rowIndex === 0 ? 'tableHeader' : 'tableCell',
+        attrs: {},
+        content: [
+          {
+            type: 'paragraph',
+            content: parseInlineLinks(cell.trim()),
+          },
+        ],
+      })),
+    })),
+  };
+}
+
 interface ParsedLine {
-  type: 'heading' | 'bullet' | 'ordered' | 'paragraph' | 'link' | 'code' | 'rule';
+  type: 'heading' | 'bullet' | 'ordered' | 'paragraph' | 'link' | 'code' | 'rule' | 'table' | 'codeBlockStart' | 'codeBlockEnd';
   content: string;
   level?: number;
   url?: string;
   linkText?: string;
+  language?: string;
+  cells?: string[];
 }
 
 function parseLine(line: string): ParsedLine | null {
   if (!line.trim()) return null;
+  
+  // Code block start/end
+  const codeBlockMatch = line.match(/^```(\w*)$/);
+  if (codeBlockMatch) {
+    return { type: 'codeBlockStart', content: '', language: codeBlockMatch[1] || 'plaintext' };
+  }
   
   const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
   if (headingMatch) {
@@ -140,6 +171,17 @@ function parseLine(line: string): ParsedLine | null {
   
   if (line.match(/^---+$/) || line.match(/^\*\*\*+$/)) {
     return { type: 'rule', content: '' };
+  }
+  
+  // Table row (starts and ends with |)
+  const tableMatch = line.match(/^\|(.+)\|$/);
+  if (tableMatch) {
+    const cells = tableMatch[1].split('|').map(c => c.trim());
+    // Skip separator rows like |---|---|
+    if (cells.every(c => /^[-:]+$/.test(c))) {
+      return null;
+    }
+    return { type: 'table', content: line, cells };
   }
   
   return { type: 'paragraph', content: line };
@@ -172,6 +214,10 @@ export function markdownToAdf(markdown: string): AdfDocument {
   const content: AdfNode[] = [];
   let bulletItems: string[] = [];
   let orderedItems: string[] = [];
+  let tableRows: string[][] = [];
+  let inCodeBlock = false;
+  let codeBlockLanguage = 'plaintext';
+  let codeBlockLines: string[] = [];
   
   const flushBulletList = () => {
     if (bulletItems.length > 0) {
@@ -187,41 +233,88 @@ export function markdownToAdf(markdown: string): AdfDocument {
     }
   };
   
+  const flushTable = () => {
+    if (tableRows.length > 0) {
+      content.push(createTable(tableRows));
+      tableRows = [];
+    }
+  };
+  
+  const flushCodeBlock = () => {
+    if (codeBlockLines.length > 0) {
+      content.push(createCodeBlock(codeBlockLines.join('\n'), codeBlockLanguage));
+      codeBlockLines = [];
+      codeBlockLanguage = 'plaintext';
+    }
+  };
+  
   for (const line of lines) {
+    if (inCodeBlock) {
+      if (line.match(/^```$/)) {
+        inCodeBlock = false;
+        flushCodeBlock();
+      } else {
+        codeBlockLines.push(line);
+      }
+      continue;
+    }
+    
     const parsed = parseLine(line);
     
     if (!parsed) {
       flushBulletList();
       flushOrderedList();
+      flushTable();
       continue;
     }
     
     switch (parsed.type) {
+      case 'codeBlockStart':
+        flushBulletList();
+        flushOrderedList();
+        flushTable();
+        inCodeBlock = true;
+        codeBlockLanguage = parsed.language || 'plaintext';
+        break;
+        
       case 'heading':
         flushBulletList();
         flushOrderedList();
+        flushTable();
         content.push(createHeading(parsed.content, parsed.level as 1 | 2 | 3 | 4 | 5 | 6));
         break;
         
       case 'bullet':
         flushOrderedList();
+        flushTable();
         bulletItems.push(parsed.content);
         break;
         
       case 'ordered':
         flushBulletList();
+        flushTable();
         orderedItems.push(parsed.content);
+        break;
+        
+      case 'table':
+        flushBulletList();
+        flushOrderedList();
+        if (parsed.cells) {
+          tableRows.push(parsed.cells);
+        }
         break;
         
       case 'rule':
         flushBulletList();
         flushOrderedList();
+        flushTable();
         content.push(createHorizontalRule());
         break;
         
       case 'paragraph': {
         flushBulletList();
         flushOrderedList();
+        flushTable();
         const inlineContent = parseInlineLinks(parsed.content);
         content.push({
           type: 'paragraph',
@@ -234,6 +327,8 @@ export function markdownToAdf(markdown: string): AdfDocument {
   
   flushBulletList();
   flushOrderedList();
+  flushTable();
+  flushCodeBlock();
   
   return createAdfDocument(content);
 }
@@ -260,6 +355,20 @@ export function adfToPlainText(adf: AdfDocument | unknown): string {
         return node.content?.map(li => `- ${extractText(li)}`).join('\n') || '';
       case 'orderedList':
         return node.content?.map((li, i) => `${i + 1}. ${extractText(li)}`).join('\n') || '';
+      case 'codeBlock':
+        return '```' + (node.attrs?.language || '') + '\n' + extractText(node) + '\n```';
+      case 'table': {
+        if (!node.content) return '';
+        const rows = node.content.map(row => {
+          const cells = row.content?.map(cell => extractText(cell)) || [];
+          return '| ' + cells.join(' | ') + ' |';
+        });
+        if (rows.length > 0) {
+          const headerSep = '| ' + (node.content[0]?.content?.map(() => '---').join(' | ') || '') + ' |';
+          rows.splice(1, 0, headerSep);
+        }
+        return rows.join('\n');
+      }
       case 'rule':
         return '---';
       default:
